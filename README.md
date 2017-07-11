@@ -3,6 +3,16 @@
 `telegram` is a simple Telegram Bot API client.
 
 
+#### Principles
+
+> Good design is honest. 
+> Dieter Rams
+
+Types must be clear when its fields are optional. Because of this some fields are
+pointers to bool, int, or string - types in the package explicitly mirror
+types from [Telegram Bot API](https://core.telegram.org/bots/api#available-types).
+
+
 #### Usage
 
 First, install the package.

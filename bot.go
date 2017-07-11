@@ -182,7 +182,11 @@ func (b *Bot) do(ctx context.Context, method string, data interface{}, v interfa
 	}
 
 	if r.ErrorCode != 0 {
-		return &APIError{ErrorCode: r.ErrorCode, Description: r.Description}
+		return &APIError{
+			ErrorCode:   r.ErrorCode,
+			Description: r.Description,
+			Parameters:  r.Parameters,
+		}
 	}
 
 	return json.Unmarshal([]byte(r.Result), v)
@@ -278,6 +282,7 @@ func WithLimit(limit int) UpdatesOption {
 type APIError struct {
 	ErrorCode   int
 	Description string
+	Parameters  *ResponseParameters
 }
 
 // Error returns an error string.
@@ -291,6 +296,7 @@ type apiResponse struct {
 	OK     bool            `json:"ok"`
 	Result json.RawMessage `json:"result,omitempty"`
 	// error part
-	ErrorCode   int    `json:"error_code,omitempty"`
-	Description string `json:"description,omitempty"`
+	ErrorCode   int                 `json:"error_code,omitempty"`
+	Description string              `json:"description,omitempty"`
+	Parameters  *ResponseParameters `json:"parameters,omitempty"`
 }

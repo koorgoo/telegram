@@ -31,24 +31,24 @@ type WebhookInfo struct {
 }
 
 type User struct {
-	ID           int    `json:"id"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Username     string `json:"username"`
-	LanguageCode string `json:"language_code"`
+	ID           int     `json:"id"`
+	FirstName    string  `json:"first_name"`
+	LastName     *string `json:"last_name"`
+	Username     *string `json:"username"`
+	LanguageCode *string `json:"language_code"`
 }
 
 type Chat struct {
-	ID                          int    `json:"id"`
-	Type                        string `json:"type"`
-	Title                       string `json:"title"`
-	Username                    string `json:"username"`
-	FirstName                   string `json:"first_name"`
-	LastName                    string `json:"last_name"`
-	AllMembersAreAdministrators bool   `json:"all_members_are_administrators"`
-	// ChatPhoto
-	Description string `json:"description"`
-	InviteLink  string `json:"invite_link"`
+	ID                          int        `json:"id"`
+	Type                        string     `json:"type"`
+	Title                       *string    `json:"title"`
+	Username                    *string    `json:"username"`
+	FirstName                   *string    `json:"first_name"`
+	LastName                    *string    `json:"last_name"`
+	AllMembersAreAdministrators *bool      `json:"all_members_are_administrators"`
+	ChatPhoto                   *ChatPhoto `json:"chat_photo"`
+	Description                 *string    `json:"description"`
+	InviteLink                  *string    `json:"invite_link"`
 }
 
 func (c *Chat) IsPrivate() bool    { return c.Type == "private" }
@@ -63,10 +63,10 @@ type Message struct {
 	Chat            Chat             `json:"chat"`
 	ForwardFrom     *User            `json:"forward_from"`
 	ForwardFromChat *Chat            `json:"forward_from_chat"`
-	ForwardDate     int              `json:"forward_date"`
+	ForwardDate     *int             `json:"forward_date"`
 	ReplyToMessage  *Message         `json:"reply_to_message"`
-	EditDate        int              `json:"edit_date"`
-	Text            string           `json:"text"`
+	EditDate        *int             `json:"edit_date"`
+	Text            *string          `json:"text"`
 	Entities        []*MessageEntity `json:"entities"`
 	// Audio
 	// Document
@@ -76,29 +76,32 @@ type Message struct {
 	// Video
 	// Voice
 	// VideoNote
-	// NewChatMembers
+	NewChatMembers []*User `json:"new_chat_members"`
+	Caption        *string `json:"caption"`
+	// Contact
+	// Location
 	// Venue
-	// NewChatMember
-	// LeftChatMember
-	// NewChatTitle
+	NewChatMember  *User   `json:"new_chat_member"`
+	LeftChatMember *User   `json:"left_chat_member"`
+	NewChatTitle   *string `json:"new_chat_title"`
 	// NewChatPhoto
-	// DeleteChatPhoto
-	// GroupChatCreated
-	// SupergroupChatCreated
-	// ChannelChatCreated
-	// MigrateToChatId
-	// MigrateFromChatId
-	PinnedMessage *Message `json:"pinned_message"`
+	DeleteChatPhoto       *bool    `json:"delete_chat_photo"`
+	GroupChatCreated      *bool    `json:"group_chat_created"`
+	SupergroupChatCreated *bool    `json:"supergroup_chat_created"`
+	ChannelChatCreated    *bool    `json:"channel_chat_created"`
+	MigrateToChatID       *int64   `json:"migrate_to_chat_id"`
+	MigrateFromChatID     *int64   `json:"migrate_from_chat_id"`
+	PinnedMessage         *Message `json:"pinned_message"`
 	// Invoice
 	// SuccessfulPayment
 }
 
 type MessageEntity struct {
-	Type   string `json:"type"`
-	Offset int    `json:"offset"`
-	Length int    `json:"length"`
-	URL    string `json:"url"`
-	User   *User  `json:"user"`
+	Type   string  `json:"type"`
+	Offset int     `json:"offset"`
+	Length int     `json:"length"`
+	URL    *string `json:"url"`
+	User   *User   `json:"user"`
 }
 
 func (e *MessageEntity) IsMention() bool    { return e.Type == "mention" }
@@ -152,14 +155,15 @@ type InlineKeyboardButton struct {
 	// Pay
 }
 
+// TODO: Ensure Data may not be sent to leave a pointer to string.
 type CallbackQuery struct {
-	Id              string  `json:"id"`
-	From            User    `json:"from"`
-	Message         Message `json:"message"`
-	InlineMessageId string  `json:"inline_message_id"`
-	ChatInstance    string  `json:"chat_instance"`
-	Data            string  `json:"data"`
-	// GameShortName
+	Id              string   `json:"id"`
+	From            User     `json:"from"`
+	Message         *Message `json:"message"`
+	InlineMessageId *string  `json:"inline_message_id"`
+	ChatInstance    string   `json:"chat_instance"`
+	Data            *string  `json:"data"`
+	// GameShortName *string
 }
 
 type ForceReply struct {
@@ -167,9 +171,35 @@ type ForceReply struct {
 	Selective   bool `json:"selective"`
 }
 
-// ChatPhoto
-// ChatMember
-// ResponseParameters
+type ChatPhoto struct {
+	SmallFileID string `json:"small_file_id"`
+	BigFileID   string `json:"big_file_id"`
+}
+
+type ChatMember struct {
+	User      User   `json:"user"`
+	Status    string `json:"status"`
+	UntilDate *int   `json:"until_date"`
+	// administrators only stuff
+	CanBeEdited           *bool `json:"can_be_edited"`
+	CanChangeInfo         *bool `json:"can_change_info"`
+	CanPostMessages       *bool `json:"can_post_messages"`
+	CanEditMessages       *bool `json:"can_edit_messages"`
+	CanDeleteMessages     *bool `json:"can_delete_messages"`
+	CanInviteUsers        *bool `json:"can_invite_users"`
+	CanRestrictMembers    *bool `json:"can_restrict_members"`
+	CanPinMessages        *bool `json:"can_pin_messages"`
+	CanPromoteMembers     *bool `json:"can_promote_members"`
+	CanSendMessages       *bool `json:"can_send_messages"`
+	CanSendMediaMessages  *bool `json:"can_send_media_messages"`
+	CanSendOtherMessages  *bool `json:"can_send_other_messages"`
+	CanAddWebPagePreviews *bool `json:"can_add_web_page_previews"`
+}
+
+type ResponseParameters struct {
+	MigrateToChatID *int64 `json:"migrate_to_chat_id"`
+	RetryAfter      *int   `json:"retry_after"`
+}
 
 type InputFile interface {
 	io.Reader
@@ -198,7 +228,7 @@ func (m *ParseMode) MarshalJSON() ([]byte, error) {
 }
 
 type NewMessage struct {
-	ChatID                int       `json:"chat_id"`
+	ChatID                int64     `json:"chat_id"`
 	Text                  string    `json:"text"`
 	ParseMode             ParseMode `json:"parse_mode,omitempty"`
 	DisableWebPagePreview bool      `json:"disable_web_page_preview,omitempty"`
