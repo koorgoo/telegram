@@ -157,10 +157,10 @@ type InlineKeyboardButton struct {
 
 // TODO: Ensure Data may not be sent to leave a pointer to string.
 type CallbackQuery struct {
-	Id              string   `json:"id"`
+	ID              string   `json:"id"`
 	From            User     `json:"from"`
 	Message         *Message `json:"message"`
-	InlineMessageId *string  `json:"inline_message_id"`
+	InlineMessageID *string  `json:"inline_message_id"`
 	ChatInstance    string   `json:"chat_instance"`
 	Data            *string  `json:"data"`
 	// GameShortName *string
@@ -233,7 +233,7 @@ type NewMessage struct {
 	ParseMode             ParseMode `json:"parse_mode,omitempty"`
 	DisableWebPagePreview bool      `json:"disable_web_page_preview,omitempty"`
 	DisableNotification   bool      `json:"disable_notification,omitempty"`
-	ReplyToMessageId      int       `json:"reply_to_message_id,omitempty"`
+	ReplyToMessageID      int       `json:"reply_to_message_id,omitempty"`
 	ReplyMarkup           Markup    `json:"reply_markup,omitempty"`
 }
 
@@ -248,7 +248,7 @@ var _ = Markup((*InlineKeyboardMarkup)(nil))
 var _ = Markup((*ForceReply)(nil))
 
 type MessageText struct {
-	ChatID                int                   `json:"chat_id,omitempty"`
+	ChatID                int64                 `json:"chat_id,omitempty"`
 	MessageID             int                   `json:"message_id,omitempty"`
 	InlineMessageID       int                   `json:"inline_message_id,omitempty"`
 	Text                  string                `json:"text"`
@@ -258,14 +258,14 @@ type MessageText struct {
 }
 
 type ForwardMessage struct {
-	ChatID              int  `json:"chat_id"`
-	FromChatID          int  `json:"from_chat_id"`
-	DisableNotification bool `json:"disable_notification,omitempty"`
-	MessageId           int  `json:"message_id"`
+	ChatID              int64 `json:"chat_id"`
+	FromChatID          int64 `json:"from_chat_id"`
+	DisableNotification bool  `json:"disable_notification,omitempty"`
+	MessageID           int   `json:"message_id"`
 }
 
 type PhotoMessage struct {
-	ChatID              int       `json:"chat_id"`
+	ChatID              int64     `json:"chat_id"`
 	Photo               InputFile `json:"-"`
 	PhotoID             string    `json:"photo,omitempty"`
 	Caption             string    `json:"caption,omitempty"`
@@ -275,6 +275,7 @@ type PhotoMessage struct {
 
 var _ = (Multiparter)((*PhotoMessage)(nil))
 
+// Multipart implements Multiparter interface.
 func (m *PhotoMessage) Multipart() *Multipart {
 	if m.Photo == nil {
 		return nil
@@ -282,7 +283,7 @@ func (m *PhotoMessage) Multipart() *Multipart {
 	return &Multipart{
 		Files: map[string]InputFile{"photo": m.Photo},
 		Form: url.Values{
-			"chat_id":              {strconv.FormatInt(int64(m.ChatID), 10)},
+			"chat_id":              {strconv.FormatInt(m.ChatID, 10)},
 			"caption":              {m.Caption},
 			"disable_notification": {strconv.FormatBool(m.DisableNotification)},
 			"reply_to_message_id":  {strconv.FormatInt(int64(m.ReplyToMessageID), 10)},
@@ -290,7 +291,6 @@ func (m *PhotoMessage) Multipart() *Multipart {
 	}
 }
 
-// PhotoMessage
 // AudioMessage
 // DocumentMessage
 // StickerMessage
@@ -329,21 +329,21 @@ type CallbackQueryAnswer struct {
 }
 
 type MessageCaption struct {
-	ChatId          int                   `json:"chat_id,omitempty"`
-	MessageId       int                   `json:"message_id,omitempty"`
-	InlineMessageId int                   `json:"inline_message_id,omitempty"`
+	ChatID          int64                 `json:"chat_id,omitempty"`
+	MessageID       int                   `json:"message_id,omitempty"`
+	InlineMessageID int                   `json:"inline_message_id,omitempty"`
 	Caption         string                `json:"caption,omitempty"`
 	ReplyMarkup     *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
 type MessageReplyMarkup struct {
-	ChatId          int                   `json:"chat_id,omitempty"`
-	MessageId       int                   `json:"message_id,omitempty"`
-	InlineMessageId int                   `json:"inline_message_id,omitempty"`
+	ChatID          int64                 `json:"chat_id,omitempty"`
+	MessageID       int                   `json:"message_id,omitempty"`
+	InlineMessageID int                   `json:"inline_message_id,omitempty"`
 	ReplyMarkup     *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
 type MessageDeletion struct {
-	ChatID    int `json:"chat_id"`
-	MessageID int `json:"message_id"`
+	ChatID    int64 `json:"chat_id"`
+	MessageID int   `json:"message_id"`
 }

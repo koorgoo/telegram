@@ -8,9 +8,11 @@
 > Good design is honest. 
 > Dieter Rams
 
-Types must be clear when its fields are optional. Because of this some fields are
-pointers to bool, int, or string - types in the package explicitly mirror
-types from [Telegram Bot API](https://core.telegram.org/bots/api#available-types).
+Types must be clear about its fields' type and optionality. Because of this some
+ids are int64. And some fields are pointers to bool, int, or string.
+
+Types in the package explicitly mirror types of
+[Telegram Bot API](https://core.telegram.org/bots/api#available-types).
 
 
 #### Usage
@@ -41,10 +43,13 @@ func main() {
     if err != nil {
         panic(err)
     }
+    id, err := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 64)
+    if err != nil {
+        panic(err)
+    }
 
-    id, _ := strconv.ParseInt(os.Getenv("CHAT_ID"), 10, 32)
     m, err := b.SendMessage(ctx, &tg.NewMessage{
-        ChatID: int(id),
+        ChatID: id,
         Text:   "At your service.",
     })
     if err != nil {
