@@ -1,5 +1,6 @@
-//go:generate python keyboards.py
 package telegram
+
+//go:generate python keyboards.py
 
 import (
 	"encoding/json"
@@ -209,23 +210,27 @@ type InputFile interface {
 
 // Parse modes.
 const (
-	ModeDefault ParseMode = iota
-	ModeMarkdown
-	ModeHTML
+	ModeDefault  ParseMode = 0
+	ModeMarkdown           = 1
+	ModeHTML               = 2
 )
 
 type ParseMode int
 
 // MarshalJSON implements json.Marshaler interface.
-func (m *ParseMode) MarshalJSON() ([]byte, error) {
-	var s string
-	switch *m {
+func (m ParseMode) MarshalJSON() (b []byte, err error) {
+	switch m {
+	case ModeDefault:
+		// ModeDefault should be evaluated as empty by json package and skipped
+		// in message marshalling. But empty string was a simplest solution to
+		// leave ParseMode a simple type.
+		b = []byte(`""`)
 	case ModeMarkdown:
-		s = "Markdown"
+		b = []byte(`"Markdown"`)
 	case ModeHTML:
-		s = "HTML"
+		b = []byte(`"HTML"`)
 	}
-	return []byte(s), nil
+	return
 }
 
 type NewMessage struct {

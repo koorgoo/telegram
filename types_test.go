@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 )
@@ -27,5 +28,25 @@ func TestReplyKeyboardMarkup_UnmarshalJSON(t *testing.T) {
 	}
 	if s := m.Keyboard[0][0].Text; s != "test" {
 		t.Fatalf("button: want %q, got %q", "test", s)
+	}
+}
+
+var parseModeTests = []struct {
+	Name  string
+	Mode  ParseMode
+	Bytes []byte
+}{
+	{"default", ModeDefault, []byte(`""`)},
+	{"markdown", ModeMarkdown, []byte(`"Markdown"`)},
+	{"html", ModeHTML, []byte(`"HTML"`)},
+}
+
+func TestParseMode_MarshalJSON(t *testing.T) {
+	for _, tt := range parseModeTests {
+		if b, err := json.Marshal(tt.Mode); err != nil {
+			t.Fatalf("%s: %s", tt.Name, err)
+		} else if !bytes.Equal(b, tt.Bytes) {
+			t.Fatalf("%s: want %v, got %v", tt.Name, tt.Bytes, b)
+		}
 	}
 }
