@@ -1,6 +1,8 @@
 package telegram
 
-import "context"
+import (
+	"context"
+)
 
 // GetMe returns a basic information about the bot.
 func (b *Bot) GetMe(ctx context.Context) (*User, error) {
@@ -92,15 +94,33 @@ func (b *Bot) AnswerCallbackQuery(ctx context.Context, a *CallbackQueryAnswer) e
 	return nil
 }
 
-func (b *Bot) EditMessageText(ctx context.Context, t *MessageText) error {
-	var ok bool
-	if err := b.do(ctx, "editMessageText", t, &ok); err != nil {
-		return err
+// TODO: What does True mean for edit* methods?
+// > On success, if edited message is sent by the bot, the edited Message is
+// > returned, otherwise True is returned.
+// https://core.telegram.org/bots/api#editmessagetext
+
+func (b *Bot) EditMessageText(ctx context.Context, t *MessageText) (*Message, error) {
+	var v *Message
+	if err := b.do(ctx, "editMessageText", t, &v); err != nil {
+		return nil, err
 	}
-	if !ok {
-		return ErrNotEdited
+	return v, nil
+}
+
+func (b *Bot) EditMessageCaption(ctx context.Context, c *MessageCaption) (*Message, error) {
+	var v *Message
+	if err := b.do(ctx, "editMessageCaption", c, &v); err != nil {
+		return nil, err
 	}
-	return nil
+	return v, nil
+}
+
+func (b *Bot) EditMessageReplyMarkup(ctx context.Context, m *MessageReplyMarkup) (*Message, error) {
+	var v *Message
+	if err := b.do(ctx, "editMessageReplyMarkup", m, &v); err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 func (b *Bot) DeleteMessage(ctx context.Context, d *MessageDeletion) error {

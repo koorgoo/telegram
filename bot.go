@@ -21,8 +21,9 @@ const (
 )
 
 const (
-	defaultURL        = "https://api.telegram.org/bot"
-	defaultErrTimeout = 5 * time.Second
+	defaultURL         = "https://api.telegram.org/bot"
+	defaultErrTimeout  = 5 * time.Second
+	defaultPollTimeout = time.Minute
 )
 
 var (
@@ -32,12 +33,14 @@ var (
 )
 
 type Bot struct {
-	ctx        context.Context
-	url        string
-	errTimeout time.Duration
-	noUpdates  bool
-	updatec    chan []*Update
-	errorc     chan error
+	name        string
+	url         string
+	ctx         context.Context
+	errTimeout  time.Duration
+	pollTimeout time.Duration
+	noUpdates   bool
+	updatec     chan []*Update
+	errorc      chan error
 }
 
 func NewBot(ctx context.Context, token string, opts ...BotOption) (*Bot, error) {
@@ -54,9 +57,11 @@ func NewBot(ctx context.Context, token string, opts ...BotOption) (*Bot, error) 
 }
 
 type botOptions struct {
-	URL        string
-	ErrTimeout time.Duration
-	NoUpdates  bool
+	Name        string
+	URL         string
+	ErrTimeout  time.Duration
+	PollTimeout time.Duration
+	NoUpdates   bool
 }
 
 type BotOption func(*botOptions)
@@ -73,6 +78,12 @@ func WithErrTimeout(t time.Duration) BotOption {
 	}
 }
 
+func WithPollTimeout(t time.Duration) BotOption {
+	return func(o *botOptions) {
+		o.PollTimeout = t
+	}
+}
+
 func WithoutUpdates() BotOption {
 	return func(o *botOptions) {
 		o.NoUpdates = true
@@ -80,17 +91,19 @@ func WithoutUpdates() BotOption {
 }
 
 func newBot(ctx context.Context, token string, opts ...BotOption) *Bot {
-	o := &botOptions{URL: defaultURL, ErrTimeout: defaultErrTimeout}
+	o := &botOptions{URL: defaultURL, ErrTimeout: defaultErrTimeout, PollTimeout: defaultPollTimeout}
 	for _, opt := range opts {
 		opt(o)
 	}
 	bot := &Bot{
-		ctx:        ctx,
-		url:        o.URL + token,
-		errTimeout: o.ErrTimeout,
-		noUpdates:  o.NoUpdates,
-		updatec:    make(chan []*Update),
-		errorc:     make(chan error),
+		name:        o.Name,
+		url:         o.URL + token,
+		ctx:         ctx,
+		errTimeout:  o.ErrTimeout,
+		pollTimeout: o.PollTimeout,
+		noUpdates:   o.NoUpdates,
+		updatec:     make(chan []*Update),
+		errorc:      make(chan error),
 	}
 	if bot.noUpdates {
 		close(bot.updatec)
@@ -104,7 +117,7 @@ func (b *Bot) listenToUpdates() {
 	donec := b.ctx.Done()
 loop:
 	for {
-		u, err := b.GetUpdates(b.ctx, WithOffset(offset))
+		u, err := b.GetUpdates(b.ctx, WithOffset(offset), WithTimeout(b.pollTimeout))
 		// Handle context errors differently - shutdown gracefully.
 		switch err {
 		case context.Canceled, context.DeadlineExceeded:
@@ -181,7 +194,7 @@ func (b *Bot) do(ctx context.Context, method string, data interface{}, v interfa
 		return err
 	}
 
-	if r.ErrorCode != 0 {
+	if !r.OK {
 		return &APIError{
 			ErrorCode:   r.ErrorCode,
 			Description: r.Description,
@@ -249,10 +262,25 @@ func (m *Multipart) Encode() (io.Reader, string, error) {
 }
 
 type updatesOptions struct {
-	Offset int `json:"offset,omitempty"`
-	Limit  int `json:"limit,omitempty"`
-	// Timeout        int
+	Offset  int
+	Limit   int
+	Timeout time.Duration
 	// AllowedUpdates []string
+}
+
+// MarshalJSON implements json.Marshaler interface.
+func (o *updatesOptions) MarshalJSON() ([]byte, error) {
+	m := map[string]interface{}{}
+	if o.Offset > 0 {
+		m["offset"] = o.Offset
+	}
+	if o.Limit > 0 {
+		m["limit"] = o.Limit
+	}
+	if o.Timeout > 0 {
+		m["timeout"] = int(o.Timeout.Seconds())
+	}
+	return json.Marshal(m)
 }
 
 type UpdatesOption func(*updatesOptions)
@@ -275,6 +303,14 @@ func WithLimit(limit int) UpdatesOption {
 			limit = 100
 		}
 		o.Limit = limit
+	}
+}
+
+// WithTimeout modifies timeout of updates request. 0 duration means short
+// polling (for testing only).
+func WithTimeout(t time.Duration) UpdatesOption {
+	return func(o *updatesOptions) {
+		o.Timeout = t
 	}
 }
 

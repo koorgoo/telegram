@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // testAPIResponse represents a alike apiResponse structure with Resutl key field.
@@ -65,4 +66,29 @@ func TestBotDoIssuesValidHttpRequest(t *testing.T) {
 
 func ref(s string) *string {
 	return &s
+}
+
+var updatesOptionsMarshalJSONTests = []struct {
+	Opts updatesOptions
+	JSON string
+}{
+	// Offset
+	{updatesOptions{Offset: 1}, `{"offset":1}`},
+	// Timeout must be encoded in seconds
+	{updatesOptions{Timeout: time.Second}, `{"timeout":1}`},
+	{updatesOptions{Timeout: time.Minute}, `{"timeout":60}`},
+	// Limit
+	{updatesOptions{Limit: 1}, `{"limit":1}`},
+}
+
+func TestUpdatesOptions_MarshalJSON(t *testing.T) {
+	for _, tt := range updatesOptionsMarshalJSONTests {
+		b, err := json.Marshal(&tt.Opts)
+		if err != nil {
+			t.Fatalf("%+v: %s", tt.Opts, err)
+		}
+		if s := string(b); s != tt.JSON {
+			t.Fatalf("%+v: want %s, got %s", tt.Opts, tt.JSON, s)
+		}
+	}
 }
