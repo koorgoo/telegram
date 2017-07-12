@@ -15,6 +15,7 @@ type Update struct {
 	ChannelPost       *Message `json:"channel_post"`
 	EditedChannelPost *Message `json:"edited_channel_post"`
 	// InlineQuery
+	// ChosenInlineResult
 	CallbackQuery *CallbackQuery `json:"callback_query"`
 	// ShippingQuery
 	// PreCheckoutQuery
@@ -39,7 +40,7 @@ type User struct {
 }
 
 type Chat struct {
-	ID                          int        `json:"id"`
+	ID                          int64      `json:"id"`
 	Type                        string     `json:"type"`
 	Title                       *string    `json:"title"`
 	Username                    *string    `json:"username"`
