@@ -2,10 +2,17 @@ package telegram
 
 import (
 	"context"
+	"errors"
+)
+
+var (
+	ErrNotDeleted  = errors.New("telegram: message not deleted")
+	ErrNotEdited   = errors.New("telegram: message not edited")
+	ErrNotAnswered = errors.New("telegram: query not answered")
 )
 
 // GetMe returns a basic information about the bot.
-func (b *Bot) GetMe(ctx context.Context) (*User, error) {
+func (b *bot) GetMe(ctx context.Context) (*User, error) {
 	var u *User
 	if err := b.do(ctx, "getMe", nil, &u); err != nil {
 		return nil, err
@@ -14,7 +21,7 @@ func (b *Bot) GetMe(ctx context.Context) (*User, error) {
 }
 
 // GetUpdates returns a slice of updates received with given options.
-func (b *Bot) GetUpdates(ctx context.Context, opts ...UpdatesOption) ([]*Update, error) {
+func (b *bot) GetUpdates(ctx context.Context, opts ...UpdatesOption) ([]*Update, error) {
 	uo := new(updatesOptions)
 	for _, opt := range opts {
 		opt(uo)
@@ -32,7 +39,7 @@ func (b *Bot) GetUpdates(ctx context.Context, opts ...UpdatesOption) ([]*Update,
 // WebhookInfo
 
 // SendMessages sends m message and returns a sent message instance on success.
-func (b *Bot) SendMessage(ctx context.Context, m *NewMessage) (*Message, error) {
+func (b *bot) SendMessage(ctx context.Context, m *NewMessage) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "sendMessage", m, &v); err != nil {
 		return nil, err
@@ -40,7 +47,7 @@ func (b *Bot) SendMessage(ctx context.Context, m *NewMessage) (*Message, error) 
 	return v, nil
 }
 
-func (b *Bot) ForwardMessage(ctx context.Context, m *ForwardMessage) (*Message, error) {
+func (b *bot) ForwardMessage(ctx context.Context, m *ForwardMessage) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "forwardMessage", m, &v); err != nil {
 		return nil, err
@@ -48,7 +55,7 @@ func (b *Bot) ForwardMessage(ctx context.Context, m *ForwardMessage) (*Message, 
 	return v, nil
 }
 
-func (b *Bot) SendPhoto(ctx context.Context, m *PhotoMessage) (*Message, error) {
+func (b *bot) SendPhoto(ctx context.Context, m *PhotoMessage) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "sendPhoto", m, &v); err != nil {
 		return nil, err
@@ -83,7 +90,7 @@ func (b *Bot) SendPhoto(ctx context.Context, m *PhotoMessage) (*Message, error) 
 // GetChatMembersCount
 // GetChatMembers
 
-func (b *Bot) AnswerCallbackQuery(ctx context.Context, a *CallbackQueryAnswer) error {
+func (b *bot) AnswerCallbackQuery(ctx context.Context, a *CallbackQueryAnswer) error {
 	var ok bool
 	if err := b.do(ctx, "answerCallbackQuery", a, &ok); err != nil {
 		return err
@@ -99,7 +106,7 @@ func (b *Bot) AnswerCallbackQuery(ctx context.Context, a *CallbackQueryAnswer) e
 // > returned, otherwise True is returned.
 // https://core.telegram.org/bots/api#editmessagetext
 
-func (b *Bot) EditMessageText(ctx context.Context, t *MessageText) (*Message, error) {
+func (b *bot) EditMessageText(ctx context.Context, t *MessageText) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "editMessageText", t, &v); err != nil {
 		return nil, err
@@ -107,7 +114,7 @@ func (b *Bot) EditMessageText(ctx context.Context, t *MessageText) (*Message, er
 	return v, nil
 }
 
-func (b *Bot) EditMessageCaption(ctx context.Context, c *MessageCaption) (*Message, error) {
+func (b *bot) EditMessageCaption(ctx context.Context, c *MessageCaption) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "editMessageCaption", c, &v); err != nil {
 		return nil, err
@@ -115,7 +122,7 @@ func (b *Bot) EditMessageCaption(ctx context.Context, c *MessageCaption) (*Messa
 	return v, nil
 }
 
-func (b *Bot) EditMessageReplyMarkup(ctx context.Context, m *MessageReplyMarkup) (*Message, error) {
+func (b *bot) EditMessageReplyMarkup(ctx context.Context, m *MessageReplyMarkup) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "editMessageReplyMarkup", m, &v); err != nil {
 		return nil, err
@@ -123,7 +130,7 @@ func (b *Bot) EditMessageReplyMarkup(ctx context.Context, m *MessageReplyMarkup)
 	return v, nil
 }
 
-func (b *Bot) DeleteMessage(ctx context.Context, d *MessageDeletion) error {
+func (b *bot) DeleteMessage(ctx context.Context, d *MessageDeletion) error {
 	var ok bool
 	if err := b.do(ctx, "deleteMessage", d, &ok); err != nil {
 		return err

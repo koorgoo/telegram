@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,13 +11,9 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
-const (
-	jsonContentType = "application/json;chartset=utf-8"
-)
+const jsonContentType = "application/json;chartset=utf-8"
 
 const (
 	defaultURL         = "https://api.telegram.org/bot"
@@ -26,38 +21,38 @@ const (
 	defaultPollTimeout = time.Minute
 )
 
-var (
-	ErrNotDeleted  = errors.New("telegram: message not deleted")
-	ErrNotEdited   = errors.New("telegram: message not edited")
-	ErrNotAnswered = errors.New("telegram: query not answered")
-)
+type Bot interface {
+	Username() string
+	Updates() <-chan []*Update
+	Errors() <-chan error
 
-type Bot struct {
-	name        string
-	url         string
-	ctx         context.Context
-	errTimeout  time.Duration
-	pollTimeout time.Duration
-	noUpdates   bool
-	updatec     chan []*Update
-	errorc      chan error
+	GetMe(context.Context) (*User, error)
+	GetUpdates(context.Context, ...UpdatesOption) ([]*Update, error)
+
+	SendMessage(context.Context, *NewMessage) (*Message, error)
+	ForwardMessage(context.Context, *ForwardMessage) (*Message, error)
+
+	SendPhoto(context.Context, *PhotoMessage) (*Message, error)
+
+	EditMessageText(context.Context, *MessageText) (*Message, error)
+	EditMessageCaption(context.Context, *MessageCaption) (*Message, error)
+	EditMessageReplyMarkup(context.Context, *MessageReplyMarkup) (*Message, error)
+	DeleteMessage(context.Context, *MessageDeletion) error
 }
 
-func NewBot(ctx context.Context, token string, opts ...BotOption) (*Bot, error) {
-	bot := newBot(ctx, token, opts...)
-	// ensure bot works
-	_, err := bot.GetMe(context.TODO())
-	if err != nil {
+func NewBot(ctx context.Context, token string, opts ...BotOption) (Bot, error) {
+	b := newBot(ctx, token, opts...)
+	if err := b.ping(); err != nil {
 		return nil, err
 	}
-	if !bot.noUpdates {
-		go bot.listenToUpdates()
+	if !b.noUpdates {
+		go b.listenToUpdates()
 	}
-	return bot, nil
+	return b, nil
 }
 
 type botOptions struct {
-	Name        string
+	Username    string
 	URL         string
 	ErrTimeout  time.Duration
 	PollTimeout time.Duration
@@ -65,6 +60,12 @@ type botOptions struct {
 }
 
 type BotOption func(*botOptions)
+
+func WithUsername(s string) BotOption {
+	return func(o *botOptions) {
+		o.Username = s
+	}
+}
 
 func withURL(url string) BotOption {
 	return func(o *botOptions) {
@@ -90,13 +91,24 @@ func WithoutUpdates() BotOption {
 	}
 }
 
-func newBot(ctx context.Context, token string, opts ...BotOption) *Bot {
+type bot struct {
+	username    string
+	url         string
+	ctx         context.Context
+	errTimeout  time.Duration
+	pollTimeout time.Duration
+	noUpdates   bool
+	updatec     chan []*Update
+	errorc      chan error
+}
+
+func newBot(ctx context.Context, token string, opts ...BotOption) *bot {
 	o := &botOptions{URL: defaultURL, ErrTimeout: defaultErrTimeout, PollTimeout: defaultPollTimeout}
 	for _, opt := range opts {
 		opt(o)
 	}
-	bot := &Bot{
-		name:        o.Name,
+	b := &bot{
+		username:    o.Username,
 		url:         o.URL + token,
 		ctx:         ctx,
 		errTimeout:  o.ErrTimeout,
@@ -105,14 +117,28 @@ func newBot(ctx context.Context, token string, opts ...BotOption) *Bot {
 		updatec:     make(chan []*Update),
 		errorc:      make(chan error),
 	}
-	if bot.noUpdates {
-		close(bot.updatec)
-		close(bot.errorc)
+	if b.noUpdates {
+		close(b.updatec)
+		close(b.errorc)
 	}
-	return bot
+	return b
 }
 
-func (b *Bot) listenToUpdates() {
+func (b *bot) ping() error {
+	ctx, cancel := context.WithTimeout(context.Background(), b.errTimeout)
+	defer cancel()
+	me, err := b.GetMe(ctx)
+	if err != nil {
+		return fmt.Errorf("telegram: failed to check bot: %s", err)
+	}
+	// TODO: Does not seem to be good to set bot username while ping.
+	if b.username == "" {
+		b.username = *me.Username // Never must be nil.
+	}
+	return nil
+}
+
+func (b *bot) listenToUpdates() {
 	var offset int
 	donec := b.ctx.Done()
 loop:
@@ -165,20 +191,21 @@ func sleepctx(ctx context.Context, t time.Duration) {
 	}
 }
 
-func (b *Bot) Updates() <-chan []*Update { return b.updatec }
-func (b *Bot) Errors() <-chan error      { return b.errorc }
+func (b *bot) Username() string { return b.username }
+
+func (b *bot) Updates() <-chan []*Update { return b.updatec }
+func (b *bot) Errors() <-chan error      { return b.errorc }
 
 // call issues HTTP request to API for the method with form values and decodes
 // received data in v. It returns error otherwise.
-func (b *Bot) do(ctx context.Context, method string, data interface{}, v interface{}) error {
-	client := http.DefaultClient
+func (b *bot) do(ctx context.Context, method string, data interface{}, v interface{}) error {
 	url := b.url + "/" + method
 
 	body, contentType, err := b.encode(data)
 	if err != nil {
 		return err
 	}
-	resp, err := ctxhttp.Post(ctx, client, url, contentType, body)
+	resp, err := post(ctx, nil, url, contentType, body)
 	if err != nil {
 		return err
 	}
@@ -195,7 +222,7 @@ func (b *Bot) do(ctx context.Context, method string, data interface{}, v interfa
 	}
 
 	if !r.OK {
-		return &APIError{
+		return &Error{
 			ErrorCode:   r.ErrorCode,
 			Description: r.Description,
 			Parameters:  r.Parameters,
@@ -205,7 +232,45 @@ func (b *Bot) do(ctx context.Context, method string, data interface{}, v interfa
 	return json.Unmarshal([]byte(r.Result), v)
 }
 
-func (b *Bot) encode(data interface{}) (io.Reader, string, error) {
+// post issues a POST request via the do function.
+//
+// Copied from golang.org/x/net/context/ctxhttp
+func post(ctx context.Context, client *http.Client, url, bodyType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", bodyType)
+	return do(ctx, client, req)
+}
+
+// do sends an HTTP request with the provided http.Client and returns
+// an HTTP response.
+//
+// If the client is nil, http.DefaultClient is used.
+//
+// The provided ctx must be non-nil. If it is canceled or times out,
+// ctx.Err() will be returned.
+//
+// Copied from golang.org/x/net/context/ctxhttp
+func do(ctx context.Context, client *http.Client, req *http.Request) (*http.Response, error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req.WithContext(ctx))
+	// If we got an error, and the context has been canceled,
+	// the context's error is probably more useful.
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+		}
+	}
+	return resp, err
+}
+
+func (b *bot) encode(data interface{}) (io.Reader, string, error) {
 	if m, ok := data.(Multiparter); ok {
 		if v := m.Multipart(); v != nil {
 			return v.Encode()
@@ -314,15 +379,15 @@ func WithTimeout(t time.Duration) UpdatesOption {
 	}
 }
 
-// APIError represents an error returned by API. It satisfies error interface.
-type APIError struct {
+// Error represents an error returned by API. It satisfies error interface.
+type Error struct {
 	ErrorCode   int
 	Description string
 	Parameters  *ResponseParameters
 }
 
 // Error returns an error string.
-func (e *APIError) Error() string {
+func (e *Error) Error() string {
 	return fmt.Sprintf("telegram: %d %s", e.ErrorCode, e.Description)
 }
 
