@@ -39,12 +39,12 @@ func TestBotDoIssuesValidHttpRequest(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 			t.Fatal(err)
 		}
-		if m.Text != "test" {
+		if *m.Text != "test" {
 			t.Fatalf("text: want %q, got %q", "test", m.Text)
 		}
 		err := json.NewEncoder(w).Encode(&testAPIResponse{
 			Response: apiResponse{OK: true},
-			Result:   &User{Username: "bot"},
+			Result:   &User{Username: ref("bot")},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -53,12 +53,16 @@ func TestBotDoIssuesValidHttpRequest(t *testing.T) {
 	defer ts.Close()
 	ctx := context.Background()
 	bot := newBot(ctx, "token", withURL(ts.URL+"/"))
-	m := &Message{Text: "test"}
+	m := &Message{Text: ref("test")}
 	var user User
 	if err := bot.do(ctx, "method", m, &user); err != nil {
 		t.Fatal(err)
 	}
-	if user.Username != "bot" {
+	if *user.Username != "bot" {
 		t.Fatalf("username: want %q, got %q", "bot", user.Username)
 	}
+}
+
+func ref(s string) *string {
+	return &s
 }
