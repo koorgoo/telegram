@@ -3,6 +3,7 @@ package telegram
 import (
 	"fmt"
 	"strings"
+	"unicode/utf16"
 )
 
 const mentionSign = "@"
@@ -86,13 +87,13 @@ func (c *commands) parseCommand(m *Message, e *MessageEntity) *Command {
 		return nil
 	}
 	text := *m.Text
-	command := safeSlice(text, e.Offset, e.Offset+e.Length)
+	command := utf16Slice(text, e.Offset, e.Offset+e.Length)
 	name, mention := splitCommand(command)
 	// Commands to other bots are skipped.
 	if mention != "" && mention != c.username {
 		return nil
 	}
-	tail := safeSlice(text, e.Offset+e.Length, len(text))
+	tail := utf16Slice(text, e.Offset+e.Length, -1)
 	args := splitArgs(tail)
 	return &Command{Name: name, Args: args, From: *m.From, Chat: m.Chat, Date: m.Date}
 }
@@ -137,35 +138,31 @@ type command struct {
 
 // Run executes the handler with the cmd and send error on errc.
 func (c *command) Run(errc chan<- error) {
-	errc <- c.Func(c.Command, c.Update)
+	var err error
+	defer func() {
+		// If Func panics then replace err with a recovered value - it will hold
+		// the real error.
+		if rerr := recover(); rerr != nil {
+			err = fmt.Errorf("%s", rerr)
+		}
+		errc <- err
+	}()
+	err = c.Func(c.Command, c.Update)
 }
 
-// safeSlice returns a substring of s from rune with index from to the rune with
-// index to.
-func safeSlice(s string, from, to int) string {
-	from = max(0, from)
-	from = min(from, len(s))
-	to = min(to, len(s))
-	if from >= to {
-		return ""
+// utf16Slice returns a substring of s from a UTF-16 code with from position
+// to a code with to position.
+// If to equals -1 then a slice will hold UTF-16 codes up to the last code.
+//
+// UTF-16 is used according to the documentation on offset and length fields.
+// https://core.telegram.org/bots/api#messageentity
+func utf16Slice(s string, from, to int) string {
+	b := utf16.Encode([]rune(s))
+	if to == -1 {
+		to = len(b)
 	}
-	return string([]rune(s)[from:to])
-}
-
-// max returns maximum of a and b.
-func max(a, b int) int {
-	if a >= b {
-		return a
-	}
-	return b
-}
-
-// min returns minimum of a and b.
-func min(a, b int) int {
-	if a <= b {
-		return a
-	}
-	return b
+	r := utf16.Decode(b[from:to])
+	return string(r)
 }
 
 // multiError contains other errors.

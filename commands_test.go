@@ -2,22 +2,30 @@ package telegram
 
 import "testing"
 
-var SafeSliceTests = []struct {
+var UTF16SliceTests = []struct {
 	S        string
 	From, To int
 	Slice    string
 }{
-	{"01234", 0, 4, "0123"},
-	{"01234", -10, 10, "01234"},
-	{"01234", 3, 10, "34"},
-	{"01234", 5, 10, ""},
-	{"01234", 10, 10, ""},
-	{"01234", 20, 10, ""},
+	// English (ASCII)
+	{"abc", 0, 0, ""},
+	{"abc", 0, 1, "a"},
+	{"abc", 0, 3, "abc"},
+	{"abc", 1, 3, "bc"},
+	{"abc", 3, 3, ""},
+	{"abc", 0, -1, "abc"},
+	// Russian
+	{"абв", 0, 0, ""},
+	{"абв", 0, 1, "а"},
+	{"абв", 0, 3, "абв"},
+	{"абв", 1, 3, "бв"},
+	{"абв", 3, 3, ""},
+	{"абв", 0, -1, "абв"},
 }
 
-func TestSafeSlice(t *testing.T) {
-	for _, tt := range SafeSliceTests {
-		if s := safeSlice(tt.S, tt.From, tt.To); s != tt.Slice {
+func TestUTF16Slice(t *testing.T) {
+	for _, tt := range UTF16SliceTests {
+		if s := utf16Slice(tt.S, tt.From, tt.To); s != tt.Slice {
 			t.Errorf("want %q, got %q", tt.Slice, s)
 		}
 	}
@@ -66,4 +74,15 @@ func stringsEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestCommandRunRecovers(t *testing.T) {
+	errc := make(chan error, 1)
+	defer close(errc)
+	c := command{Func: func(*Command, *Update) error { panic("test") }}
+	c.Run(errc)
+	err := <-errc
+	if s := err.Error(); s != "test" {
+		t.Errorf("error: want %q, got %q", "test", s)
+	}
 }
