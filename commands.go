@@ -143,7 +143,12 @@ func (c *command) Run(errc chan<- error) {
 // safeSlice returns a substring of s from rune with index from to the rune with
 // index to.
 func safeSlice(s string, from, to int) string {
-	from, to = max(0, from), min(to, len(s))
+	from = max(0, from)
+	from = min(from, len(s))
+	to = min(to, len(s))
+	if from >= to {
+		return ""
+	}
 	return string([]rune(s)[from:to])
 }
 
