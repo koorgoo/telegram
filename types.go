@@ -1,6 +1,7 @@
 package telegram
 
 //go:generate python keyboards.py
+//go:generate python message_methods.py
 
 import (
 	"encoding/json"
@@ -8,6 +9,9 @@ import (
 	"net/url"
 	"strconv"
 )
+
+// Getting updates
+// https://core.telegram.org/bots/api#getting-updates
 
 type Update struct {
 	UpdateID          int      `json:"update_id"`
@@ -31,6 +35,9 @@ type WebhookInfo struct {
 	MaxConnections       int      `json:"max_connections"`
 	AllowedUpdates       []string `json:"allowed_updates"`
 }
+
+// Available types
+// https://core.telegram.org/bots/api#available-types
 
 type User struct {
 	ID           int     `json:"id"`
@@ -70,30 +77,30 @@ type Message struct {
 	EditDate        *int             `json:"edit_date"`
 	Text            *string          `json:"text"`
 	Entities        []*MessageEntity `json:"entities"`
-	// Audio
-	// Document
+	Audio           *Audio           `json:"audio"`
+	Document        *Document        `json:"document"`
 	// Game
-	// Photo
-	// Sticker
-	// Video
-	// Voice
-	// VideoNote
-	NewChatMembers []*User `json:"new_chat_members"`
-	Caption        *string `json:"caption"`
+	Photo          []*PhotoSize `json:"photo"`
+	Sticker        *Sticker     `json:"sticker"`
+	Video          *Video       `json:"video"`
+	Voice          *Voice       `json:"voice"`
+	VideoNote      *VideoNote   `json:"video_note"`
+	NewChatMembers []*User      `json:"new_chat_members"`
+	Caption        *string      `json:"caption"`
 	// Contact
 	// Location
 	// Venue
-	NewChatMember  *User   `json:"new_chat_member"`
-	LeftChatMember *User   `json:"left_chat_member"`
-	NewChatTitle   *string `json:"new_chat_title"`
-	// NewChatPhoto
-	DeleteChatPhoto       *bool    `json:"delete_chat_photo"`
-	GroupChatCreated      *bool    `json:"group_chat_created"`
-	SupergroupChatCreated *bool    `json:"supergroup_chat_created"`
-	ChannelChatCreated    *bool    `json:"channel_chat_created"`
-	MigrateToChatID       *int64   `json:"migrate_to_chat_id"`
-	MigrateFromChatID     *int64   `json:"migrate_from_chat_id"`
-	PinnedMessage         *Message `json:"pinned_message"`
+	NewChatMember         *User        `json:"new_chat_member"`
+	LeftChatMember        *User        `json:"left_chat_member"`
+	NewChatTitle          *string      `json:"new_chat_title"`
+	NewChatPhoto          []*PhotoSize `json:"new_chat_photo"`
+	DeleteChatPhoto       *bool        `json:"delete_chat_photo"`
+	GroupChatCreated      *bool        `json:"group_chat_created"`
+	SupergroupChatCreated *bool        `json:"supergroup_chat_created"`
+	ChannelChatCreated    *bool        `json:"channel_chat_created"`
+	MigrateToChatID       *int64       `json:"migrate_to_chat_id"`
+	MigrateFromChatID     *int64       `json:"migrate_from_chat_id"`
+	PinnedMessage         *Message     `json:"pinned_message"`
 	// Invoice
 	// SuccessfulPayment
 }
@@ -112,18 +119,84 @@ func (e *MessageEntity) IsBotCommand() bool { return e.Type == "bot_command" }
 func (e *MessageEntity) IsURL() bool        { return e.Type == "url" }
 func (e *MessageEntity) IsEmail() bool      { return e.Type == "email" }
 
-// PhotoSize
-// Audio
-// Document
-// Sticker
-// Video
-// Voice
-// VideoNote
-// Contact
-// Location
-// Venue
-// UserProfilePhotos
-// File
+type PhotoSize struct {
+	FileID   string `json:"file_id"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+	FileSize *int   `json:"file_size"`
+}
+
+type Audio struct {
+	FileID    string  `json:"file_id"`
+	Duration  int     `json:"duration"`
+	Performer *string `json:"performer"`
+	Title     *string `json:"title"`
+	MimeType  *string `json:"mime_type"`
+	FileSize  *int    `json:"file_size"`
+}
+
+type Document struct {
+	FileID   string     `json:"file_id"`
+	Thumb    *PhotoSize `json:"thumb"`
+	FileName *string    `json:"file_name"`
+	MimeType *string    `json:"mime_type"`
+	FileSize *int       `json:"file_size"`
+}
+
+type Video struct {
+	FileID   string     `json:"file_id"`
+	Width    int        `json:"width"`
+	Height   int        `json:"height"`
+	Duration int        `json:"duration"`
+	Thumb    *PhotoSize `json:"thumb"`
+	MimeType *string    `json:"mime_type"`
+	FileSize *int       `json:"file_size"`
+}
+
+type Voice struct {
+	FileID   string  `json:"file_id"`
+	Duration int     `json:"duration"`
+	MimeType *string `json:"mime_type"`
+	FileSize *int    `json:"file_size"`
+}
+
+type VideoNote struct {
+	FileID   string     `json:"file_id"`
+	Length   int        `json:"length"`
+	Duration int        `json:"duration"`
+	Thumb    *PhotoSize `json:"thumb"`
+	FileSize *int       `json:"file_size"`
+}
+
+type Contact struct {
+	PhoneNumber string
+	FirstName   string
+	LastName    *string
+	UserID      *int
+}
+
+type Location struct {
+	Longitude float32 `json:"longitude"`
+	Latitude  float32 `json:"latitude"`
+}
+
+type Venue struct {
+	Location     Location `json:"location"`
+	Title        string   `json:"title"`
+	Address      string   `json:"address"`
+	FoursquareID *string  `json:"foursquare_id"`
+}
+
+type UserProfilePhotos struct {
+	TotalCount int            `json:"total_count"`
+	Photos     [][]*PhotoSize `json:"photos"`
+}
+
+type File struct {
+	FileID   string  `json:"file_id"`
+	FileSize *int    `json:"file_size"`
+	FilePath *string `json:"file_path"`
+}
 
 type ReplyKeyboardMarkup struct {
 	Keyboard        [][]*KeyboardButton `json:"keyboard"`
@@ -253,17 +326,7 @@ var _ = Markup((*ReplyKeyboardRemove)(nil))
 var _ = Markup((*InlineKeyboardMarkup)(nil))
 var _ = Markup((*ForceReply)(nil))
 
-type MessageText struct {
-	ChatID                int64                 `json:"chat_id,omitempty"`
-	MessageID             int                   `json:"message_id,omitempty"`
-	InlineMessageID       int                   `json:"inline_message_id,omitempty"`
-	Text                  string                `json:"text"`
-	ParseMode             ParseMode             `json:"parse_mode"`
-	DisableWebPagePreview bool                  `json:"disable_web_page_preview"`
-	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
-}
-
-type ForwardMessage struct {
+type ForwardedMessage struct {
 	ChatID              int64 `json:"chat_id"`
 	FromChatID          int64 `json:"from_chat_id"`
 	DisableNotification bool  `json:"disable_notification,omitempty"`
@@ -326,12 +389,28 @@ func (m *PhotoMessage) Multipart() *Multipart {
 // getChatMembersCount
 // getChatMember
 
+// TODO: Replace
+type ChatID int64
+
 type CallbackQueryAnswer struct {
 	CallbackQueryID string `json:"callback_query_id"`
 	Text            string `json:"text,omitempty"`
 	ShowAlert       bool   `json:"show_alert,omitempty"`
 	URL             string `json:"url,omitempty"`
 	CacheTime       int    `json:"cache_time,omitempty"`
+}
+
+// Updating messages
+// https://core.telegram.org/bots/api#updating-messages
+
+type MessageText struct {
+	ChatID                int64                 `json:"chat_id,omitempty"`
+	MessageID             int                   `json:"message_id,omitempty"`
+	InlineMessageID       int                   `json:"inline_message_id,omitempty"`
+	Text                  string                `json:"text"`
+	ParseMode             ParseMode             `json:"parse_mode"`
+	DisableWebPagePreview bool                  `json:"disable_web_page_preview"`
+	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
 type MessageCaption struct {
@@ -353,3 +432,35 @@ type MessageDeletion struct {
 	ChatID    int64 `json:"chat_id"`
 	MessageID int   `json:"message_id"`
 }
+
+// Stickers
+// https://core.telegram.org/bots/api#stickers
+
+type Sticker struct {
+	FileID       string        `json:"file_id"`
+	Width        int           `json:"width"`
+	Height       int           `json:"height"`
+	Thumb        *PhotoSize    `json:"thumb"`
+	Emoji        *string       `json:"emoji"`
+	SetName      *string       `json:"set_name"`
+	MaskPosition *MaskPosition `json:"mask_position"`
+	FileSize     *int          `json:"file_size"`
+}
+
+type StickerSet struct {
+	Name          string     `json:"name"`
+	Title         string     `json:"title"`
+	ContainsMasks bool       `json:"contains_masks"`
+	Stickers      []*Sticker `json:"stickers"`
+}
+
+type MaskPosition struct {
+	Point  string  `json:"point"`
+	XShift float32 `json:"x_shift"`
+	YShift float32 `json:"y_shift"`
+	Scale  float32 `json:"scale"`
+}
+
+// Inline mode
+// https://core.telegram.org/bots/api#inline-mode
+// TODO: Add types and methods.

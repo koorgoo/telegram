@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,8 @@ const (
 	defaultPollTimeout = time.Minute
 )
 
+var ErrEmptyToken = errors.New("telegram: empty token")
+
 type Bot interface {
 	Username() string
 	Updates() <-chan []*Update
@@ -30,9 +33,17 @@ type Bot interface {
 	GetUpdates(context.Context, ...UpdatesOption) ([]*Update, error)
 
 	SendMessage(context.Context, *NewMessage) (*Message, error)
-	ForwardMessage(context.Context, *ForwardMessage) (*Message, error)
-
-	SendPhoto(context.Context, *PhotoMessage) (*Message, error)
+	ForwardMessage(context.Context, *ForwardedMessage) (*Message, error)
+	// SendPhoto(context.Context, *PhotoMessage) (*Message, error)
+	// SendAudio(context.Context, *AudioMessage) (*Message, error)
+	// SendDocument(context.Context, *DocumentMessage) (*Message, error)
+	// SendSticker(context.Context, *StickerMessage) (*Message, error)
+	// SendVideo(context.Context, *VideoMessage) (*Message, error)
+	// SendVoice(context.Context, *VoiceMessage) (*Message, error)
+	// SendVoiceNote(context.Context, *VoiceNoteMessage) (*Message, error)
+	// SendLocation(context.Context, *LocationMessage) (*Message, error)
+	// SendVenue(context.Context, *VenueMessage) (*Message, error)
+	// SendContact(context.Context, *ContactMessage) (*Message, error)
 
 	EditMessageText(context.Context, *MessageText) (*Message, error)
 	EditMessageCaption(context.Context, *MessageCaption) (*Message, error)
@@ -41,6 +52,9 @@ type Bot interface {
 }
 
 func NewBot(ctx context.Context, token string, opts ...BotOption) (Bot, error) {
+	if token == "" {
+		return nil, ErrEmptyToken
+	}
 	b := newBot(ctx, token, opts...)
 	if err := b.ping(); err != nil {
 		return nil, err

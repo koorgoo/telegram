@@ -11,15 +11,6 @@ var (
 	ErrNotAnswered = errors.New("telegram: query not answered")
 )
 
-// GetMe returns a basic information about the bot.
-func (b *bot) GetMe(ctx context.Context) (*User, error) {
-	var u *User
-	if err := b.do(ctx, "getMe", nil, &u); err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
 // GetUpdates returns a slice of updates received with given options.
 func (b *bot) GetUpdates(ctx context.Context, opts ...UpdatesOption) ([]*Update, error) {
 	uo := new(updatesOptions)
@@ -38,6 +29,15 @@ func (b *bot) GetUpdates(ctx context.Context, opts ...UpdatesOption) ([]*Update,
 // GetWebhookInfo
 // WebhookInfo
 
+// GetMe returns a basic information about the bot.
+func (b *bot) GetMe(ctx context.Context) (*User, error) {
+	var u *User
+	if err := b.do(ctx, "getMe", nil, &u); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 // SendMessages sends m message and returns a sent message instance on success.
 func (b *bot) SendMessage(ctx context.Context, m *NewMessage) (*Message, error) {
 	var v *Message
@@ -47,7 +47,7 @@ func (b *bot) SendMessage(ctx context.Context, m *NewMessage) (*Message, error) 
 	return v, nil
 }
 
-func (b *bot) ForwardMessage(ctx context.Context, m *ForwardMessage) (*Message, error) {
+func (b *bot) ForwardMessage(ctx context.Context, m *ForwardedMessage) (*Message, error) {
 	var v *Message
 	if err := b.do(ctx, "forwardMessage", m, &v); err != nil {
 		return nil, err
