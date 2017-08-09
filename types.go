@@ -1,7 +1,6 @@
 package telegram
 
-//go:generate python keyboards.py
-//go:generate python message_methods.py
+//go:generate python types_keyboards.py
 
 import (
 	"encoding/json"
@@ -13,6 +12,7 @@ import (
 // Getting updates
 // https://core.telegram.org/bots/api#getting-updates
 
+// https://core.telegram.org/bots/api#update
 type Update struct {
 	UpdateID          int      `json:"update_id"`
 	Message           *Message `json:"message"`
@@ -26,6 +26,7 @@ type Update struct {
 	// PreCheckoutQuery
 }
 
+// https://core.telegram.org/bots/api#webhookinfo
 type WebhookInfo struct {
 	URL                  string   `json:"url"`
 	HasCustomCertificate bool     `json:"has_custom_certificate"`
@@ -39,6 +40,7 @@ type WebhookInfo struct {
 // Available types
 // https://core.telegram.org/bots/api#available-types
 
+// https://core.telegram.org/bots/api#user
 type User struct {
 	ID           int     `json:"id"`
 	FirstName    string  `json:"first_name"`
@@ -47,6 +49,7 @@ type User struct {
 	LanguageCode *string `json:"language_code"`
 }
 
+// https://core.telegram.org/bots/api#chat
 type Chat struct {
 	ID                          int64      `json:"id"`
 	Type                        string     `json:"type"`
@@ -65,6 +68,7 @@ func (c *Chat) IsGroup() bool      { return c.Type == "group" }
 func (c *Chat) IsSupergroup() bool { return c.Type == "supergroup" }
 func (c *Chat) IsChannel() bool    { return c.Type == "channel" }
 
+// https://core.telegram.org/bots/api#message
 type Message struct {
 	MessageID       int              `json:"message_id"`
 	From            *User            `json:"from"`
@@ -80,16 +84,16 @@ type Message struct {
 	Audio           *Audio           `json:"audio"`
 	Document        *Document        `json:"document"`
 	// Game
-	Photo          []*PhotoSize `json:"photo"`
-	Sticker        *Sticker     `json:"sticker"`
-	Video          *Video       `json:"video"`
-	Voice          *Voice       `json:"voice"`
-	VideoNote      *VideoNote   `json:"video_note"`
-	NewChatMembers []*User      `json:"new_chat_members"`
-	Caption        *string      `json:"caption"`
-	// Contact
-	// Location
-	// Venue
+	Photo                 []*PhotoSize `json:"photo"`
+	Sticker               *Sticker     `json:"sticker"`
+	Video                 *Video       `json:"video"`
+	Voice                 *Voice       `json:"voice"`
+	VideoNote             *VideoNote   `json:"video_note"`
+	NewChatMembers        []*User      `json:"new_chat_members"`
+	Caption               *string      `json:"caption"`
+	Contact               *Contact     `json:"contact"`
+	Location              *Location    `json:"location"`
+	Venue                 *Venue       `json:"venue"`
 	NewChatMember         *User        `json:"new_chat_member"`
 	LeftChatMember        *User        `json:"left_chat_member"`
 	NewChatTitle          *string      `json:"new_chat_title"`
@@ -105,6 +109,7 @@ type Message struct {
 	// SuccessfulPayment
 }
 
+// https://core.telegram.org/bots/api#messageentity
 type MessageEntity struct {
 	Type   string  `json:"type"`
 	Offset int     `json:"offset"`
@@ -119,6 +124,7 @@ func (e *MessageEntity) IsBotCommand() bool { return e.Type == "bot_command" }
 func (e *MessageEntity) IsURL() bool        { return e.Type == "url" }
 func (e *MessageEntity) IsEmail() bool      { return e.Type == "email" }
 
+// https://core.telegram.org/bots/api#photosize
 type PhotoSize struct {
 	FileID   string `json:"file_id"`
 	Width    int    `json:"width"`
@@ -126,6 +132,7 @@ type PhotoSize struct {
 	FileSize *int   `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#audio
 type Audio struct {
 	FileID    string  `json:"file_id"`
 	Duration  int     `json:"duration"`
@@ -135,6 +142,7 @@ type Audio struct {
 	FileSize  *int    `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#document
 type Document struct {
 	FileID   string     `json:"file_id"`
 	Thumb    *PhotoSize `json:"thumb"`
@@ -143,6 +151,7 @@ type Document struct {
 	FileSize *int       `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#video
 type Video struct {
 	FileID   string     `json:"file_id"`
 	Width    int        `json:"width"`
@@ -153,6 +162,7 @@ type Video struct {
 	FileSize *int       `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#voice
 type Voice struct {
 	FileID   string  `json:"file_id"`
 	Duration int     `json:"duration"`
@@ -160,6 +170,7 @@ type Voice struct {
 	FileSize *int    `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#videonote
 type VideoNote struct {
 	FileID   string     `json:"file_id"`
 	Length   int        `json:"length"`
@@ -168,6 +179,7 @@ type VideoNote struct {
 	FileSize *int       `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#contact
 type Contact struct {
 	PhoneNumber string
 	FirstName   string
@@ -175,11 +187,13 @@ type Contact struct {
 	UserID      *int
 }
 
+// https://core.telegram.org/bots/api#location
 type Location struct {
 	Longitude float32 `json:"longitude"`
 	Latitude  float32 `json:"latitude"`
 }
 
+// https://core.telegram.org/bots/api#venue
 type Venue struct {
 	Location     Location `json:"location"`
 	Title        string   `json:"title"`
@@ -187,17 +201,20 @@ type Venue struct {
 	FoursquareID *string  `json:"foursquare_id"`
 }
 
+// https://core.telegram.org/bots/api#userprofilephotos
 type UserProfilePhotos struct {
 	TotalCount int            `json:"total_count"`
 	Photos     [][]*PhotoSize `json:"photos"`
 }
 
+// https://core.telegram.org/bots/api#file
 type File struct {
 	FileID   string  `json:"file_id"`
 	FileSize *int    `json:"file_size"`
 	FilePath *string `json:"file_path"`
 }
 
+// https://core.telegram.org/bots/api#replykeyboardmarkup
 type ReplyKeyboardMarkup struct {
 	Keyboard        [][]*KeyboardButton `json:"keyboard"`
 	ResizeKeyboard  bool                `json:"resize_keyboard,omitempty"`
@@ -205,21 +222,25 @@ type ReplyKeyboardMarkup struct {
 	Selective       bool                `json:"selective,omitempty"`
 }
 
+// https://core.telegram.org/bots/api#keyboardbutton
 type KeyboardButton struct {
 	Text            string `json:"text"`
 	RequestContact  bool   `json:"request_contact,omitempty"`
 	RequestLocation bool   `json:"request_location,omitempty"`
 }
 
+// https://core.telegram.org/bots/api#replykeyboardremove
 type ReplyKeyboardRemove struct {
 	RemoveKeyboard bool `json:"remove_keyboard,omitempty"`
 	Selective      bool `json:"selective,omitempty"`
 }
 
+// https://core.telegram.org/bots/api#inlinekeyboardmarkup
 type InlineKeyboardMarkup struct {
 	InlineKeyboard [][]*InlineKeyboardButton `json:"inline_keyboard"`
 }
 
+// https://core.telegram.org/bots/api#inlinekeyboardbutton
 type InlineKeyboardButton struct {
 	Text                         string `json:"text"`
 	URL                          string `json:"url,omitempty"`
@@ -230,7 +251,7 @@ type InlineKeyboardButton struct {
 	// Pay
 }
 
-// TODO: Ensure Data may not be sent to leave a pointer to string.
+// https://core.telegram.org/bots/api#callbackquery
 type CallbackQuery struct {
 	ID              string   `json:"id"`
 	From            User     `json:"from"`
@@ -241,21 +262,24 @@ type CallbackQuery struct {
 	// GameShortName *string
 }
 
+// https://core.telegram.org/bots/api#forcereply
 type ForceReply struct {
 	ForeceReply bool `json:"force_reply"`
 	Selective   bool `json:"selective"`
 }
 
+// https://core.telegram.org/bots/api#chatphoto
 type ChatPhoto struct {
 	SmallFileID string `json:"small_file_id"`
 	BigFileID   string `json:"big_file_id"`
 }
 
+// https://core.telegram.org/bots/api#chatmember
 type ChatMember struct {
 	User      User   `json:"user"`
 	Status    string `json:"status"`
 	UntilDate *int   `json:"until_date"`
-	// administrators only stuff
+	// Administrators only.
 	CanBeEdited           *bool `json:"can_be_edited"`
 	CanChangeInfo         *bool `json:"can_change_info"`
 	CanPostMessages       *bool `json:"can_post_messages"`
@@ -271,11 +295,13 @@ type ChatMember struct {
 	CanAddWebPagePreviews *bool `json:"can_add_web_page_previews"`
 }
 
+// https://core.telegram.org/bots/api#responseparameters
 type ResponseParameters struct {
 	MigrateToChatID *int64 `json:"migrate_to_chat_id"`
 	RetryAfter      *int   `json:"retry_after"`
 }
 
+// https://core.telegram.org/bots/api#inputfile
 type InputFile interface {
 	io.Reader
 	Name() string
@@ -306,7 +332,8 @@ func (m ParseMode) MarshalJSON() (b []byte, err error) {
 	return
 }
 
-type NewMessage struct {
+// https://core.telegram.org/bots/api#sendmessage
+type TextMessage struct {
 	ChatID                int64     `json:"chat_id"`
 	Text                  string    `json:"text"`
 	ParseMode             ParseMode `json:"parse_mode,omitempty"`
@@ -326,6 +353,7 @@ var _ = Markup((*ReplyKeyboardRemove)(nil))
 var _ = Markup((*InlineKeyboardMarkup)(nil))
 var _ = Markup((*ForceReply)(nil))
 
+// https://core.telegram.org/bots/api#forwardmessage
 type ForwardedMessage struct {
 	ChatID              int64 `json:"chat_id"`
 	FromChatID          int64 `json:"from_chat_id"`
@@ -333,6 +361,7 @@ type ForwardedMessage struct {
 	MessageID           int   `json:"message_id"`
 }
 
+// https://core.telegram.org/bots/api#sendphoto
 type PhotoMessage struct {
 	ChatID              int64     `json:"chat_id"`
 	Photo               InputFile `json:"-"`
@@ -342,8 +371,6 @@ type PhotoMessage struct {
 	ReplyToMessageID    int       `json:"reply_to_message_id,omitempty"`
 }
 
-var _ = (Multiparter)((*PhotoMessage)(nil))
-
 // Multipart implements Multiparter interface.
 func (m *PhotoMessage) Multipart() *Multipart {
 	if m.Photo == nil {
@@ -351,6 +378,7 @@ func (m *PhotoMessage) Multipart() *Multipart {
 	}
 	return &Multipart{
 		Files: map[string]InputFile{"photo": m.Photo},
+		// TODO: Do not include optional fields.
 		Form: url.Values{
 			"chat_id":              {strconv.FormatInt(m.ChatID, 10)},
 			"caption":              {m.Caption},
@@ -360,17 +388,101 @@ func (m *PhotoMessage) Multipart() *Multipart {
 	}
 }
 
-// AudioMessage
-// DocumentMessage
-// StickerMessage
+// https://core.telegram.org/bots/api#sendaudio
+type AudioMessage struct {
+	ChatID              int64     `json:"chat_id"`
+	Audio               InputFile `json:"-"`
+	AudioID             string    `json:"audio"`
+	Caption             string    `json:"caption,omitempty"`
+	Duration            int       `json:"duration,omitempty"`
+	Performer           string    `json:"performer,omitempty"`
+	Title               string    `json:"title,omitempty"`
+	DisableNotification bool      `json:"disable_notification,omitempty"`
+	ReplyToMessageID    int       `json:"reply_to_message_id,omitempty"`
+	ReplyMarkup         Markup    `json:"reply_markup,omitempty"`
+}
+
+// Multipart implements Multiparter interface.
+func (m *AudioMessage) Multipart() *Multipart {
+	if m.Audio == nil {
+		return nil
+	}
+	var markup string
+	if m.ReplyMarkup != nil {
+		if b, err := m.ReplyMarkup.MarshalJSON(); err == nil {
+			markup = string(b)
+		}
+	}
+	return &Multipart{
+		Files: map[string]InputFile{"audio": m.Audio},
+		// TODO: Do not include optional fields.
+		Form: url.Values{
+			"chat_id":              {strconv.FormatInt(m.ChatID, 10)},
+			"caption":              {m.Caption},
+			"duration":             {strconv.FormatInt(int64(m.Duration), 10)},
+			"performer":            {m.Performer},
+			"title":                {m.Title},
+			"disable_notification": {strconv.FormatBool(m.DisableNotification)},
+			"reply_to_message_id":  {strconv.FormatInt(int64(m.ReplyToMessageID), 10)},
+			"reply_markup":         {markup},
+		},
+	}
+}
+
+// https://core.telegram.org/bots/api#senddocument
+type DocumentMessage struct {
+	ChatID              int64     `json:"chat_id"`
+	Document            InputFile `json:"document"`
+	Caption             string    `json:"caption,omitempty"`
+	DisableNotification bool      `json:"disable_notification,omitempty"`
+	ReplyToMessageID    int       `json:"reply_to_message_id,omitempty"`
+	ReplyMarkup         Markup    `json:"reply_markup,omitempty"`
+}
+
+// Multipart implements Multiparter interface.
+func (m *DocumentMessage) Multipart() *Multipart {
+	if m.Document == nil {
+		return nil
+	}
+	var markup string
+	if m.ReplyMarkup != nil {
+		if b, err := m.ReplyMarkup.MarshalJSON(); err == nil {
+			markup = string(b)
+		}
+	}
+	return &Multipart{
+		Files: map[string]InputFile{"document": m.Document},
+		// TODO: Do not include optional fields.
+		Form: url.Values{
+			"chat_id":              {strconv.FormatInt(m.ChatID, 10)},
+			"caption":              {m.Caption},
+			"disable_notification": {strconv.FormatBool(m.DisableNotification)},
+			"reply_to_message_id":  {strconv.FormatInt(int64(m.ReplyToMessageID), 10)},
+			"reply_markup":         {markup},
+		},
+	}
+}
+
 // VideoMessage
 // VoiceMessage
 // VideoNoteMessage
+
+var _ = (Multiparter)((*PhotoMessage)(nil))
+var _ = (Multiparter)((*AudioMessage)(nil))
+var _ = (Multiparter)((*DocumentMessage)(nil))
+
+// var _ = (Multiparter)((*VideoMessage)(nil))
+// var _ = (Multiparter)((*VoiceMessage)(nil))
+// var _ = (Multiparter)((*VideoNoteMessage)(nil))
+
 // LocationMessage
 // VenueMessage
 // ContactMessage
+
 // ChatActionMessage
+
 // UserProfilePhotosMessage
+
 // KickChatMemberMessage
 // UnbanChatMemberMessage
 // RestrictChatMemberMessage
@@ -392,6 +504,7 @@ func (m *PhotoMessage) Multipart() *Multipart {
 // TODO: Replace
 type ChatID int64
 
+// https://core.telegram.org/bots/api#answercallbackquery
 type CallbackQueryAnswer struct {
 	CallbackQueryID string `json:"callback_query_id"`
 	Text            string `json:"text,omitempty"`
@@ -403,6 +516,7 @@ type CallbackQueryAnswer struct {
 // Updating messages
 // https://core.telegram.org/bots/api#updating-messages
 
+// https://core.telegram.org/bots/api#editmessagetext
 type MessageText struct {
 	ChatID                int64                 `json:"chat_id,omitempty"`
 	MessageID             int                   `json:"message_id,omitempty"`
@@ -413,6 +527,7 @@ type MessageText struct {
 	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
+// https://core.telegram.org/bots/api#editmessagecaption
 type MessageCaption struct {
 	ChatID          int64                 `json:"chat_id,omitempty"`
 	MessageID       int                   `json:"message_id,omitempty"`
@@ -421,6 +536,7 @@ type MessageCaption struct {
 	ReplyMarkup     *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
+// https://core.telegram.org/bots/api#editmessagereplymarkup
 type MessageReplyMarkup struct {
 	ChatID          int64                 `json:"chat_id,omitempty"`
 	MessageID       int                   `json:"message_id,omitempty"`
@@ -428,7 +544,8 @@ type MessageReplyMarkup struct {
 	ReplyMarkup     *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
-type MessageDeletion struct {
+// https://core.telegram.org/bots/api#deletemessage
+type DeletedMessage struct {
 	ChatID    int64 `json:"chat_id"`
 	MessageID int   `json:"message_id"`
 }
@@ -436,6 +553,7 @@ type MessageDeletion struct {
 // Stickers
 // https://core.telegram.org/bots/api#stickers
 
+// https://core.telegram.org/bots/api#sticker
 type Sticker struct {
 	FileID       string        `json:"file_id"`
 	Width        int           `json:"width"`
@@ -447,6 +565,7 @@ type Sticker struct {
 	FileSize     *int          `json:"file_size"`
 }
 
+// https://core.telegram.org/bots/api#stickerset
 type StickerSet struct {
 	Name          string     `json:"name"`
 	Title         string     `json:"title"`
@@ -454,11 +573,22 @@ type StickerSet struct {
 	Stickers      []*Sticker `json:"stickers"`
 }
 
+// https://core.telegram.org/bots/api#maskposition
 type MaskPosition struct {
 	Point  string  `json:"point"`
 	XShift float32 `json:"x_shift"`
 	YShift float32 `json:"y_shift"`
 	Scale  float32 `json:"scale"`
+}
+
+// https://core.telegram.org/bots/api#sendsticker
+type StickerMessage struct {
+	ChatID              int64     `json:"chat_id"`
+	Sticker             InputFile `json:"-"`
+	StickerID           string    `json:"sticker"`
+	DisableNotification bool      `json:"disalbe_notification,omitempty"`
+	ReplyToMessageID    int       `json:"reply_to_message_id,omitempty"`
+	ReplyMarkup         Markup    `json:"reply_markup,omitempty"`
 }
 
 // Inline mode

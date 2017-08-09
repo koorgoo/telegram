@@ -54,8 +54,7 @@ def replace(template, replacements):
 
 
 def main():
-
-    with open('keyboards.go', 'w') as f:
+    with open('types_keyboards.go', 'w') as f:
         f.write(header)
         for typ, alias in zip(keyboard_types, alias_types):
             f.write(replace(alias_template, {

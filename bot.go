@@ -32,7 +32,7 @@ type Bot interface {
 	GetMe(context.Context) (*User, error)
 	GetUpdates(context.Context, ...UpdatesOption) ([]*Update, error)
 
-	SendMessage(context.Context, *NewMessage) (*Message, error)
+	SendMessage(context.Context, *TextMessage) (*Message, error)
 	ForwardMessage(context.Context, *ForwardedMessage) (*Message, error)
 	// SendPhoto(context.Context, *PhotoMessage) (*Message, error)
 	// SendAudio(context.Context, *AudioMessage) (*Message, error)
@@ -48,7 +48,7 @@ type Bot interface {
 	EditMessageText(context.Context, *MessageText) (*Message, error)
 	EditMessageCaption(context.Context, *MessageCaption) (*Message, error)
 	EditMessageReplyMarkup(context.Context, *MessageReplyMarkup) (*Message, error)
-	DeleteMessage(context.Context, *MessageDeletion) error
+	DeleteMessage(context.Context, *DeletedMessage) error
 }
 
 func NewBot(ctx context.Context, token string, opts ...BotOption) (Bot, error) {
