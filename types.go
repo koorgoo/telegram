@@ -348,10 +348,10 @@ type Markup interface {
 	json.Unmarshaler
 }
 
-var _ = Markup((*ReplyKeyboardMarkup)(nil))
-var _ = Markup((*ReplyKeyboardRemove)(nil))
-var _ = Markup((*InlineKeyboardMarkup)(nil))
-var _ = Markup((*ForceReply)(nil))
+var _ Markup = (*ReplyKeyboardMarkup)(nil)
+var _ Markup = (*ReplyKeyboardRemove)(nil)
+var _ Markup = (*InlineKeyboardMarkup)(nil)
+var _ Markup = (*ForceReply)(nil)
 
 // https://core.telegram.org/bots/api#forwardmessage
 type ForwardedMessage struct {

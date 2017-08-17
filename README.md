@@ -48,7 +48,7 @@ func main() {
         panic(err)
     }
 
-    m, err := b.SendMessage(ctx, &tg.NewMessage{
+    m, err := b.SendMessage(ctx, &tg.TextMessage{
         ChatID: id,
         Text:   "At your service.",
     })
