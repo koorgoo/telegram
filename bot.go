@@ -1,5 +1,10 @@
 package telegram
 
+//go:generate python methods_bool.py
+//go:generate python methods_message.py
+//go:generate python types_keyboards.py
+//go:generate gofmt -w .
+
 import (
 	"bytes"
 	"context"

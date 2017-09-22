@@ -46,6 +46,7 @@ func (m *{keyboard_type}) UnmarshalJSON(b []byte) error {
 }
 '''
 
+
 def replace(template, replacements):
     s = template
     for key, value in replacements.items():

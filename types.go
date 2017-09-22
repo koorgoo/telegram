@@ -1,7 +1,5 @@
 package telegram
 
-//go:generate python types_keyboards.py
-
 import (
 	"encoding/json"
 	"io"

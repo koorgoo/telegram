@@ -5,9 +5,6 @@ import (
 	"errors"
 )
 
-//go:generate python methods_bool.py
-//go:generate python methods_message.py
-
 var (
 	ErrNotDeleted  = errors.New("telegram: message not deleted")
 	ErrNotEdited   = errors.New("telegram: message not edited")
