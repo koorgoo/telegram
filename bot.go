@@ -31,7 +31,7 @@ var ErrEmptyToken = errors.New("telegram: empty token")
 
 type Bot interface {
 	Username() string
-	Updates() <-chan []*Update
+	Updates() <-chan *Update
 	Errors() <-chan error
 
 	GetMe(context.Context) (*User, error)
@@ -117,7 +117,7 @@ type bot struct {
 	errTimeout  time.Duration
 	pollTimeout time.Duration
 	noUpdates   bool
-	updatec     chan []*Update
+	updatec     chan *Update
 	errorc      chan error
 }
 
@@ -133,7 +133,7 @@ func newBot(ctx context.Context, token string, opts ...BotOption) *bot {
 		errTimeout:  o.ErrTimeout,
 		pollTimeout: o.PollTimeout,
 		noUpdates:   o.NoUpdates,
-		updatec:     make(chan []*Update),
+		updatec:     make(chan *Update),
 		errorc:      make(chan error),
 	}
 	if b.noUpdates {
@@ -186,11 +186,13 @@ loop:
 		// pack will not contain updates up to this last one.
 		offset = u[len(u)-1].UpdateID + 1
 
-		select {
-		case b.updatec <- u:
-			continue
-		case <-donec:
-			break
+		for _, up := range u {
+			select {
+			case b.updatec <- up:
+				continue
+			case <-donec:
+				break loop
+			}
 		}
 	}
 
@@ -212,8 +214,8 @@ func sleepctx(ctx context.Context, t time.Duration) {
 
 func (b *bot) Username() string { return b.username }
 
-func (b *bot) Updates() <-chan []*Update { return b.updatec }
-func (b *bot) Errors() <-chan error      { return b.errorc }
+func (b *bot) Updates() <-chan *Update { return b.updatec }
+func (b *bot) Errors() <-chan error    { return b.errorc }
 
 // call issues HTTP request to API for the method with form values and decodes
 // received data in v. It returns error otherwise.
