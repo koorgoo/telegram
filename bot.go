@@ -61,7 +61,7 @@ func NewBot(ctx context.Context, token string, opts ...BotOption) (Bot, error) {
 		return nil, ErrEmptyToken
 	}
 	b := newBot(ctx, token, opts...)
-	if err := b.ping(); err != nil {
+	if err := b.getUsername(); err != nil {
 		return nil, err
 	}
 	if !b.noUpdates {
@@ -143,17 +143,17 @@ func newBot(ctx context.Context, token string, opts ...BotOption) *bot {
 	return b
 }
 
-func (b *bot) ping() error {
+func (b *bot) getUsername() error {
+	if b.username != "" {
+		return nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), b.errTimeout)
 	defer cancel()
 	me, err := b.GetMe(ctx)
 	if err != nil {
-		return fmt.Errorf("telegram: failed to check bot: %s", err)
+		return fmt.Errorf("telegram: could not get name: %s", err)
 	}
-	// TODO: Does not seem to be good to set bot username while ping.
-	if b.username == "" {
-		b.username = *me.Username // Never must be nil.
-	}
+	b.username = *me.Username
 	return nil
 }
 
