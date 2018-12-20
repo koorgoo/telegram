@@ -17,6 +17,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 const jsonContentType = "application/json;chartset=utf-8"
@@ -70,12 +72,30 @@ func NewBot(ctx context.Context, token string, opts ...BotOption) (Bot, error) {
 	return b, nil
 }
 
+type SOCKS5 struct {
+	Address  string // host:port
+	User     string
+	Password string
+}
+
+func (s *SOCKS5) Auth() *proxy.Auth {
+	if s.User != "" {
+		return &proxy.Auth{
+			User:     s.User,
+			Password: s.Password,
+		}
+	}
+	return nil
+}
+
 type botOptions struct {
 	Username    string
 	URL         string
 	ErrTimeout  time.Duration
 	PollTimeout time.Duration
 	NoUpdates   bool
+	// TODO: Support several proxies.
+	SOCKS5 *SOCKS5
 }
 
 type BotOption func(*botOptions)
@@ -83,6 +103,12 @@ type BotOption func(*botOptions)
 func WithUsername(s string) BotOption {
 	return func(o *botOptions) {
 		o.Username = s
+	}
+}
+
+func WithSOCKS5(v SOCKS5) BotOption {
+	return func(o *botOptions) {
+		o.SOCKS5 = &v
 	}
 }
 
@@ -114,6 +140,7 @@ type bot struct {
 	username    string
 	url         string
 	ctx         context.Context
+	client      *http.Client
 	errTimeout  time.Duration
 	pollTimeout time.Duration
 	noUpdates   bool
@@ -126,10 +153,25 @@ func newBot(ctx context.Context, token string, opts ...BotOption) *bot {
 	for _, opt := range opts {
 		opt(o)
 	}
+
+	var client *http.Client
+	if v := o.SOCKS5; v != nil {
+		p, err := proxy.SOCKS5("tcp", v.Address, v.Auth(), proxy.Direct)
+		if err != nil {
+			fmt.Println("Error connecting to proxy:", err)
+		}
+		client = &http.Client{
+			Transport: &http.Transport{
+				Dial: p.Dial,
+			},
+		}
+	}
+
 	b := &bot{
 		username:    o.Username,
 		url:         o.URL + token,
 		ctx:         ctx,
+		client:      client,
 		errTimeout:  o.ErrTimeout,
 		pollTimeout: o.PollTimeout,
 		noUpdates:   o.NoUpdates,
@@ -226,7 +268,7 @@ func (b *bot) do(ctx context.Context, method string, data interface{}, v interfa
 	if err != nil {
 		return err
 	}
-	resp, err := post(ctx, nil, url, contentType, body)
+	resp, err := post(ctx, b.client, url, contentType, body)
 	if err != nil {
 		return err
 	}
